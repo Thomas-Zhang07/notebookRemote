@@ -113,6 +113,13 @@ function clearConfig() {
   isConfigured.value = false
 }
 
+// ==================== 认证 ====================
+
+// Token 放在请求头里，避免出现在 URL（会泄露到访问日志和浏览器历史）
+function authHeaders() {
+  return { Authorization: `Bearer ${giteeToken.value}` }
+}
+
 // ==================== 编码工具 ====================
 
 // 发送时：中文字符串 → Base64
@@ -193,15 +200,15 @@ async function openHistory() {
 
   try {
     // 1. 获取仓库默认分支
-    const repoUrl = `https://gitee.com/api/v5/repos/${giteeOwner.value}/${giteeRepo.value}?access_token=${giteeToken.value}`
-    const repoRes = await fetch(repoUrl)
+    const repoUrl = `https://gitee.com/api/v5/repos/${giteeOwner.value}/${giteeRepo.value}`
+    const repoRes = await fetch(repoUrl, { headers: authHeaders() })
     if (!repoRes.ok) throw new Error('无法获取仓库信息，请检查 Token 权限')
     const repoData = await repoRes.json()
     const defaultBranch = repoData.default_branch || 'master'
 
     // 2. 递归拉取整个文件树（一次请求拿到所有文件路径）
-    const treeUrl = `https://gitee.com/api/v5/repos/${giteeOwner.value}/${giteeRepo.value}/git/trees/${defaultBranch}?recursive=1&access_token=${giteeToken.value}`
-    const treeRes = await fetch(treeUrl)
+    const treeUrl = `https://gitee.com/api/v5/repos/${giteeOwner.value}/${giteeRepo.value}/git/trees/${defaultBranch}?recursive=1`
+    const treeRes = await fetch(treeUrl, { headers: authHeaders() })
     if (!treeRes.ok) throw new Error('无法获取文件树')
     const treeData = await treeRes.json()
 
@@ -238,8 +245,8 @@ async function viewFileContent(file) {
   isLoadingContent.value = true
 
   try {
-    const url = `https://gitee.com/api/v5/repos/${giteeOwner.value}/${giteeRepo.value}/contents/${file.path}?access_token=${giteeToken.value}`
-    const res = await fetch(url)
+    const url = `https://gitee.com/api/v5/repos/${giteeOwner.value}/${giteeRepo.value}/contents/${file.path}`
+    const res = await fetch(url, { headers: authHeaders() })
     if (!res.ok) throw new Error('无法获取文件内容')
     const data = await res.json()
 
